@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            padding: 20px;
+        }
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: center;
+        }
+        button {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            background: #007bff;
+            color: #fff;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .form-container {
+            margin-top: 20px;
+        }
+        #admin-panel {
+            display: none; /* Hide admin panel by default */
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Admin Panel Login</h2>
+    <div id="login-container">
+        <input type="password" id="admin-password" placeholder="Enter Password" />
+        <button id="login-btn">Login</button>
+    </div>
+
+    <div id="admin-panel">
+        <h3>User Management</h3>
+        <table id="user-table">
+            <thead>
+                <tr>
+                    <th>Email</th>
+                    <th>Balance</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- User data will be populated here -->
+            </tbody>
+        </table>
+
+        <h3>Withdraw Requests</h3>
+        <table id="withdraw-table">
+            <thead>
+                <tr>
+                    <th>User Email</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Withdraw requests will be populated here -->
+            </tbody>
+        </table>
+
+        <h3>Add Balance</h3>
+        <div class="form-container">
+            <input type="text" id="user-email" placeholder="User Email" />
+            <input type="number" id="add-balance" placeholder="Amount to Add" min="1" />
+            <button id="add-balance-btn">Add Balance</button>
+        </div>
+
+        <h3>Deduct Balance</h3>
+        <div class="form-container">
+            <input type="text" id="deduct-user-email" placeholder="User Email" />
+            <input type="number" id="deduct-balance" placeholder="Amount to Deduct" min="1" />
+            <button id="deduct-balance-btn">Deduct Balance</button>
+        </div>
+
+        <h3>Add Task</h3>
+        <div class="form-container">
+            <input type="text" id="task-name" placeholder="Task Name" />
+            <button id="add-task-btn">Add Task</button>
+        </div>
+    </div>
+
+    <script>
+        // Password for admin access
+        const adminPassword = "marufela";
+
+        // Sample user data
+        const users = [
+            { email: 'user1@example.com', balance: 1000, status: 'active' },
+            { email: 'user2@example.com', balance: 1500, status: 'active' }
+        ];
+
+        // Sample withdraw requests
+        const withdrawRequests = [
+            { email: 'user1@example.com', amount: 1000, status: 'pending' },
+            { email: 'user2@example.com', amount: 500, status: 'pending' }
+        ];
+
+        // Handle login
+        document.getElementById('login-btn').addEventListener('click', function() {
+            const enteredPassword = document.getElementById('admin-password').value;
+            if (enteredPassword === adminPassword) {
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
+                fetchUsers();
+                fetchWithdrawRequests();
+            } else {
+                alert('Incorrect password. Please try again.');
+            }
+        });
+
+        // Display users in the user table
+        function displayUsers() {
+            const tableBody = document.getElementById('user-table').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+            users.forEach((user, index) => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).innerText = user.email;
+                row.insertCell(1).innerText = user.balance;
+                row.insertCell(2).innerText = user.status;
+                const actionsCell = row.insertCell(3);
+                const blockBtn = document.createElement('button');
+                blockBtn.innerText = user.status === 'active' ? 'Block' : 'Unblock';
+                blockBtn.onclick = () => toggleUserStatus(index);
+                actionsCell.appendChild(blockBtn);
+            });
+        }
+
+        // Display withdraw requests
+        function displayWithdrawRequests() {
+            const tableBody = document.getElementById('withdraw-table').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = ''; // Clear existing rows
+            withdrawRequests.forEach((request, index) => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).innerText = request.email;
+                row.insertCell(1).innerText = request.amount;
+                row.insertCell(2).innerText = request.status;
+                const actionsCell = row.insertCell(3);
+                const confirmBtn = document.createElement('button');
+                confirmBtn.innerText = 'Confirm';
+                confirmBtn.onclick = () => confirmWithdrawal(index);
+                const cancelBtn = document.createElement('button');
+                cancelBtn.innerText = 'Cancel';
+                cancelBtn.onclick = () => cancelWithdrawal(index);
+                actionsCell.appendChild(confirmBtn);
+                actionsCell.appendChild(cancelBtn);
+            });
+        }
+
+        // Toggle user status
+        function toggleUserStatus(index) {
+            users[index].status = users[index].status === 'active' ? 'blocked' : 'active';
+            displayUsers();
+        }
+
+        // Confirm withdrawal
+        function confirmWithdrawal(index) {
+            const request = withdrawRequests[index];
+            const user = users.find(u => u.email === request.email);
+            if (user && user.balance >= request.amount) {
+                user.balance -= request.amount; // Deduct amount from user's balance
+                request.status = 'confirmed'; // Update request status
+                alert(`Withdrawal of ${request.amount} points for ${request.email} confirmed.`);
+            } else {
+                alert(`Insufficient balance for ${request.email}.`);
+            }
+            displayUsers();
+            displayWithdrawRequests();
+        }
+
+        // Cancel withdrawal
+        function cancelWithdrawal(index) {
+            withdrawRequests[index].status = 'canceled';
+            alert(`Withdrawal request for ${withdrawRequests[index].email} canceled.`);
+            displayWithdrawRequests();
+        }
+
+        // Add balance functionality
+        document.getElementById('add-balance-btn').addEventListener('click', function() {
+            const email = document.getElementById('user-email').value;
+            const amount = parseInt(document.getElementById('add-balance').value);
+            const user = users.find(u => u.email === email);
+            if (user && amount > 0) {
+                user.balance += amount;
+                alert(`Added ${amount} points to ${email}'s balance.`);
+                displayUsers();
+            } else {
+                alert('User not found or invalid amount.');
+            }
+        });
+
+        // Deduct balance functionality
+        document.getElementById('deduct-balance-btn').addEventListener('click', function() {
+            const email = document.getElementById('deduct-user-email').value;
+            const amount = parseInt(document.getElementById('deduct-balance').value);
+            const user = users.find(u => u.email === email);
+            if (user && amount > 0 && user.balance >= amount) {
+                user.balance -= amount;
+                alert(`Deducted ${amount} points from ${email}'s balance.`);
+                displayUsers();
+            } else {
+                alert('User not found, invalid amount, or insufficient balance.');
+            }
+        });
+
+        // Add task functionality
+        document.getElementById('add-task-btn').addEventListener('click', function() {
+            const taskName = document.getElementById('task-name').value;
+            if (taskName) {
+                alert(`Task "${taskName}" added successfully!`);
+                document.getElementById('task-name').value = ''; // Clear input
+            } else {
+                alert('Please enter a task name.');
+            }
+        });
+    </script>
+</body>
+</html>
